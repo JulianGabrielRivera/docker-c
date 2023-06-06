@@ -1,0 +1,56 @@
+# for features we can use in here, thats what version is for.
+version: '3.8'
+# indent by 2, indents to express dependencies, indent by 2 is a direct child of services, services needs atleast 1 child element, possibly multiple
+# services will be our containers so we'll have 3 child for services
+# each service will have a config and indent again
+services:
+  mongodb:
+    image: 'mongo'
+    volumes:
+      - data:/data/db
+      # forces name of container to be this container_name
+    container_name: mongodb
+    env_file:
+    # dash needed when we have a list of single values
+      - ./env/mongo.env
+  backend:
+  # looks in backend folder, looks for dockerfile and builds it
+    build: ./backend
+  # second way of making an image
+    # build:
+    #   context: ./backend
+    #   dockerfile: Dockerfile
+    #   args:
+    #     some-arg: 1 
+    ports:
+    # host post:containerport
+      - '80:80'
+    volumes:
+    # name of volume is logs and it points to /app/logs
+      - logs:/app/logs
+      # we dont need big long string here anymore
+      # relative path from compose and share everything in backend with app inside container
+      - ./backend:/app
+      # anonymous volume
+      - /app/node_modules
+    env_file:
+      - ./env/backend.env
+      # specifies first make mongodb then backend
+    depends_on: 
+      - mongodb
+  frontend:
+    build: ./frontend
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend/src:/app/src
+      # options for interactive frontend mode, able to receive input
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+# for named volumes we should also add this key, any named volumes your using must be listed here, so look at top it says data then we are using it in the bottom
+volumes:
+  data:
+  logs:
+  
